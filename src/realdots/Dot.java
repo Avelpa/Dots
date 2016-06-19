@@ -11,8 +11,7 @@ package realdots;
 public class Dot {
     
     public int x, y, width, height;
-    public int speed;
-    public Direction direction;
+    public int velX, velY;
     
     public static enum Direction {
         LEFT, RIGHT, UP, DOWN
@@ -23,7 +22,7 @@ public class Dot {
         width = RealDots.randomInt(5, 100);
         height = RealDots.randomInt(5, 100);
         
-        direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
         if (direction == Direction.UP || direction == Direction.DOWN)
         {
             x = RealDots.randomInt(0, spaceWidth-width);
@@ -43,24 +42,27 @@ public class Dot {
             }
         }
         
-        speed = RealDots.randomInt(10, 20);
+        int spd = RealDots.randomInt(5, 20);
+        switch (direction){
+            case LEFT:
+                velX = -spd;
+                break;
+            case RIGHT:
+                velX = spd;
+                break;
+            case UP:
+                velY = -spd;
+                break;
+            case DOWN:
+                velY = spd;
+                break;
+        }
+                
     }
     
     public void move()
-    {
-        switch (direction){
-            case LEFT:
-                x -= speed;
-                break;
-            case RIGHT:
-                x += speed;
-                break;
-            case UP:
-                y -= speed;
-                break;
-            case DOWN:
-                y += speed;
-                break;
-        }
+    { 
+        x += velX;
+        y += velY;
     }
 }
