@@ -49,79 +49,91 @@ public class RealDots extends JComponent implements MouseListener {
     public void spawnDot(){
         
         Dot newDot = null;
-        for (int i = 0; i < 100; i ++){
+        
+        if (dots.isEmpty())
+        {
             newDot = new Dot(WIDTH, HEIGHT);
-            for (Dot otherDot: dots){
-                if (!validSpawn(newDot, otherDot))
-                    return;
+            dots.add(newDot);
+        } else {
+            for (int i = 0; i < 100; i ++){
+                newDot = new Dot(WIDTH, HEIGHT);
+                for (Dot otherDot: dots){
+                    if (validSpawn(newDot, otherDot)){
+                        System.out.println("GOOD SPAWN");
+                        dots.add(newDot);
+                        return;
+                    }
+                }
             }
         }
-        dots.add(newDot);
     }
     
     public boolean validSpawn(Dot newDot, Dot otherDot){
         
-        
-        /// checking for 0 speeds.... what the fuk man
-        // if their speeds are the same, it's either always intersect or never
-        if (newDot.velX == otherDot.velX){
-            System.out.println(newDot.velX);
-            if (otherDot.x > newDot.x + newDot.width)
-                return true;
-            if (newDot.x > otherDot.x + otherDot.width)
-                return true;
-            return false;
-        }
-        if (newDot.velY == otherDot.velY){
-            if (newDot.y + newDot.height < otherDot.y)
-                return true;
-            if (newDot.y > otherDot.y + otherDot.height)
-                return true;
-            return false;
-        }
-        
-        int t;
-        
         // finding X1 <= X2 + width2
         int[] timeXBefore = new int[2];
-       
-        // finding the time of intersection between x1 and x2+width2
-        t = (otherDot.x - newDot.x + otherDot.width)/(newDot.velX - otherDot.velX);
-        // if the dots are initially intersecting
-        if (t == 0)
-            return false;
-        // since the movement is linear, it's simple to solve for the inequality
-        if (newDot.x < otherDot.x + otherDot.width){
-            timeXBefore[0] = -Integer.MAX_VALUE;
-            timeXBefore[1] = t;
-        } else {
-            timeXBefore[0] = t;
-            timeXBefore[1] = Integer.MAX_VALUE;
-        }
-        
-        
         // finding X2 >= X1 + width1
         int[] timeXAfter = new int[2];
         
-        // finding the time of intersection between x1 and x2+width2
-        t = (newDot.x - otherDot.x + newDot.width)/(otherDot.velX - newDot.velX);
-        // if the dots are initially intersecting
-        if (t == 0)
-            return false;
-        // since the movement is linear, it's simple to solve for the inequality
-        if (otherDot.x > newDot.x + newDot.width){
-            timeXBefore[0] = -Integer.MAX_VALUE;
-            timeXBefore[1] = t;
-        } else {
-            timeXBefore[0] = t;
+        // finding Y1 <= Y2 + height2
+        int[] timeYBefore = new int[2];
+        // finding Y2 >= Y1 + height1
+        int[] timeYAfter = new int[2];
+        
+        // if their speeds are the same, it's either always intersect or never, so check for that first
+        if (newDot.velX == otherDot.velX){
+            if (newDot.x > otherDot.x + otherDot.width)
+                return true;
+            timeXBefore[0] = 0;
             timeXBefore[1] = Integer.MAX_VALUE;
+                
+            if (otherDot.x > newDot.x + newDot.width)
+                return true;
+            timeXAfter[0] = 0;
+            timeXAfter[1] = Integer.MAX_VALUE;
+        }
+        if (newDot.velY == otherDot.velY){
+            if (newDot.y > otherDot.y + otherDot.height)
+                return true;
+            timeYBefore[0] = 0;
+            timeYBefore[1] = Integer.MAX_VALUE;
+                
+            if (otherDot.y > newDot.y + newDot.height)
+                return true;
+            timeYAfter[0] = 0;
+            timeYAfter[1] = Integer.MAX_VALUE;
         }
         
         
+        int t;
+        
+        if (newDot.velX != otherDot.velX){
+            // finding the time of intersection between x1 and x2+width2
+            t = (otherDot.x - newDot.x + otherDot.width)/(newDot.velX - otherDot.velX);
+            // if in one more tick the x values are still intersecting, then it's from t onwards
+            if ((t+1)*newDot.velX + newDot.x < (t+1)*otherDot.velX + otherDot.x + otherDot.width){
+                timeXBefore[0] = t;
+                timeXBefore[1] = Integer.MAX_VALUE;
+            } else {
+                timeXBefore[0] = -Integer.MAX_VALUE;
+                timeXBefore[1] = t;
+            }
+            
+            // finding the time of intersection between x2 and x1+width1
+            t = (newDot.x - otherDot.x + newDot.width)/(otherDot.velX - newDot.velX);
+            // if in one more tick the x values are still intersecting, then it's from t onwards
+            if ((t+1)*otherDot.velX + otherDot.x < (t+1)*newDot.velX + newDot.x + newDot.width){
+                timeXAfter[0] = t;
+                timeXAfter[1] = Integer.MAX_VALUE;
+            } else {
+                timeXAfter[0] = -Integer.MAX_VALUE;
+                timeXAfter[1] = t;
+            }
+        }
         
         int[] timeX = getIntersection(timeXBefore, timeXAfter);
-        System.out.println(timeX[0] + " " + timeX[1]);
         
+        System.out.println(timeX[0] + " " + timeX[1]);
         
         return true;
     }

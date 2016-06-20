@@ -22,7 +22,8 @@ public class Dot {
         width = RealDots.randomInt(5, 100);
         height = RealDots.randomInt(5, 100);
         
-        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+//        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+        Direction direction = RealDots.randomInt(0, 1) == 0 ? Direction.LEFT : Direction.RIGHT;
         if (direction == Direction.UP || direction == Direction.DOWN)
         {
             x = RealDots.randomInt(0, spaceWidth-width);
@@ -42,7 +43,7 @@ public class Dot {
             }
         }
         
-        int spd = RealDots.randomInt(5, 20);
+        int spd = RealDots.randomInt(5, 10);
         switch (direction){
             case LEFT:
                 velX = -spd;
