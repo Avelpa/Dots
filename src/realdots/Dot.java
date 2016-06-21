@@ -17,13 +17,14 @@ public class Dot {
         LEFT, RIGHT, UP, DOWN
     }
     
+    static int counter = 0;
+    
     public Dot(int spaceWidth, int spaceHeight)
-    {
+    {/*
         width = RealDots.randomInt(5, 100);
         height = RealDots.randomInt(5, 100);
         
-//        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
-        Direction direction = RealDots.randomInt(0, 1) == 0 ? Direction.LEFT : Direction.RIGHT;
+        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
         if (direction == Direction.UP || direction == Direction.DOWN)
         {
             x = RealDots.randomInt(0, spaceWidth-width);
@@ -58,7 +59,22 @@ public class Dot {
                 velY = spd;
                 break;
         }
-                
+           */     
+        
+        width = 50;
+        height = 50;
+        
+        if (counter >= 1){
+            velX = -10;
+            x = spaceWidth;
+            y = 300;
+        } else {
+            velX = 10;
+            x = 0-width;
+            y = 300;
+        }
+        
+        counter ++;
     }
     
     public void move()

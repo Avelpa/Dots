@@ -4,6 +4,7 @@
  */
 package realdots;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.MouseEvent;
@@ -49,7 +50,6 @@ public class RealDots extends JComponent implements MouseListener {
     public void spawnDot(){
         
         Dot newDot = null;
-        
         if (dots.isEmpty())
         {
             newDot = new Dot(WIDTH, HEIGHT);
@@ -59,7 +59,6 @@ public class RealDots extends JComponent implements MouseListener {
                 newDot = new Dot(WIDTH, HEIGHT);
                 for (Dot otherDot: dots){
                     if (validSpawn(newDot, otherDot)){
-                        System.out.println("GOOD SPAWN");
                         dots.add(newDot);
                         return;
                     }
@@ -107,6 +106,7 @@ public class RealDots extends JComponent implements MouseListener {
         
         int t;
         
+        ///////// X
         if (newDot.velX != otherDot.velX){
             // finding the time of intersection between x1 and x2+width2
             t = (otherDot.x - newDot.x + otherDot.width)/(newDot.velX - otherDot.velX);
@@ -133,9 +133,57 @@ public class RealDots extends JComponent implements MouseListener {
         
         int[] timeX = getIntersection(timeXBefore, timeXAfter);
         
-        System.out.println(timeX[0] + " " + timeX[1]);
         
-        return true;
+        ////////////////// Y
+        if (newDot.velY != otherDot.velY){
+            // finding the time of intersection between x1 and x2+width2
+            t = (otherDot.y - newDot.y + otherDot.height)/(newDot.velY - otherDot.velY);
+            // if in one more tick the x values are still intersecting, then it's from t onwards
+            if ((t+1)*newDot.velY + newDot.y < (t+1)*otherDot.velY + otherDot.y + otherDot.height){
+                timeYBefore[0] = t;
+                timeYBefore[1] = Integer.MAX_VALUE;
+            } else {
+                timeYBefore[0] = -Integer.MAX_VALUE;
+                timeYBefore[1] = t;
+            }
+            
+            // finding the time of intersection between x2 and x1+width1
+            t = (newDot.y - otherDot.y + newDot.height)/(otherDot.velY - newDot.velY);
+            // if in one more tick the x values are still intersecting, then it's from t onwards
+            if ((t+1)*otherDot.velY + otherDot.y < (t+1)*newDot.velY + newDot.y + newDot.height){
+                timeYAfter[0] = t;
+                timeYAfter[1] = Integer.MAX_VALUE;
+            } else {
+                timeYAfter[0] = -Integer.MAX_VALUE;
+                timeYAfter[1] = t;
+            }
+        }
+        
+        int[] timeY = getIntersection(timeYBefore, timeYAfter);
+        
+        int[] time = getIntersection(timeX, timeY);
+        
+        System.out.println(timeX[0] + " " + timeY[1]);
+        
+        if (newDot.velX*time[0] + newDot.x >= WIDTH || newDot.velX*time[0] + newDot.x + newDot.width <= 0)
+            return true;
+        if (newDot.velY*time[0] + newDot.y >= HEIGHT || newDot.velY*time[0] + newDot.y + newDot.height <= 0)
+            return true;
+        if (newDot.velX*time[1] + newDot.x >= WIDTH || newDot.velX*time[1] + newDot.x + newDot.width <= 0)
+            return true;
+        if (newDot.velY*time[1] + newDot.y >= HEIGHT || newDot.velY*time[1] + newDot.y + newDot.height <= 0)
+            return true;
+        
+        if (otherDot.velX*time[0] + otherDot.x >= WIDTH || otherDot.velX*time[0] + otherDot.x + otherDot.width <= 0)
+            return true;
+        if (otherDot.velY*time[0] + otherDot.y >= HEIGHT || otherDot.velY*time[0] + otherDot.y + otherDot.height <= 0)
+            return true;
+        if (otherDot.velX*time[1] + otherDot.x >= WIDTH || otherDot.velX*time[1] + otherDot.x + otherDot.width <= 0)
+            return true;
+        if (otherDot.velY*time[1] + otherDot.y >= HEIGHT || otherDot.velY*time[1] + otherDot.y + otherDot.height <= 0)
+            return true;
+        
+        return false;
     }
     
     private int[] getIntersection(int[] arr1, int[] arr2){
@@ -162,7 +210,10 @@ public class RealDots extends JComponent implements MouseListener {
         while (dotIt.hasNext())
         {
             curDot = dotIt.next();
+            g.setColor(Color.BLACK);
             g.fillRect(curDot.x, curDot.y, curDot.width, curDot.height);
+            g.setColor(Color.WHITE);
+            g.fillRect(curDot.x+2, curDot.y+2, curDot.width-4, curDot.height-4);
         }
     }
     
