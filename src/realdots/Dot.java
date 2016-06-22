@@ -14,17 +14,17 @@ public class Dot {
     public int velX, velY;
     
     public static enum Direction {
-        LEFT, RIGHT, UP, DOWN
+        LEFT, RIGHT, UP, DOWN, CHAOS
     }
     
-    static int counter = 0;
-    
     public Dot(int spaceWidth, int spaceHeight)
-    {/*
-        width = RealDots.randomInt(5, 100);
-        height = RealDots.randomInt(5, 100);
+    {
+        width = RealDots.randomInt(10, 100);
+        height = width;
         
-        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+        Direction megaDirection = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+        Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-2)];
+        
         if (direction == Direction.UP || direction == Direction.DOWN)
         {
             x = RealDots.randomInt(0, spaceWidth-width);
@@ -44,42 +44,54 @@ public class Dot {
             }
         }
         
-        int spd = RealDots.randomInt(5, 10);
-        switch (direction){
-            case LEFT:
-                velX = -spd;
-                break;
-            case RIGHT:
-                velX = spd;
-                break;
-            case UP:
-                velY = -spd;
-                break;
-            case DOWN:
-                velY = spd;
-                break;
-        }
-           */     
-        
-        width = 50;
-        height = 50;
-        
-        if (counter >= 1){
-            velX = -10;
-            x = spaceWidth;
-            y = 300;
+        if (megaDirection != Direction.CHAOS)
+        {
+            int spd = RealDots.randomInt(5, 10);
+            switch (direction){
+                case LEFT:
+                    velX = -spd;
+                    break;
+                case RIGHT:
+                    velX = spd;
+                    break;
+                case UP:
+                    velY = -spd;
+                    break;
+                case DOWN:
+                    velY = spd;
+                    break;
+            }
         } else {
-            velX = 10;
-            x = 0-width;
-            y = 300;
+            int spdX = RealDots.randomInt(5, 10);
+            int spdY = RealDots.randomInt(5, 10);
+            switch (direction){
+                case LEFT:
+                    velX = -spdX;
+                    velY = RealDots.randomInt(0, 1) == 1 ? spdY : -spdY;
+                    break;
+                case RIGHT:
+                    velX = spdX;
+                    velY = RealDots.randomInt(0, 1) == 1 ? spdY : -spdY;
+                    break;
+                case UP:
+                    velY = -spdY;
+                    velX = RealDots.randomInt(0, 1) == 1 ? spdX : -spdX;
+                    break;
+                case DOWN:
+                    velY = spdY;
+                    velX = RealDots.randomInt(0, 1) == 1 ? spdX : -spdX;
+            }
         }
-        
-        counter ++;
     }
     
     public void move()
     { 
         x += velX;
         y += velY;
+    }
+    
+    @Override
+    public String toString(){
+        return "pos:(" + x + "," + y + ") size:(" + width + "," + height + ") vel:(" + velX + "," + velY + ")";
     }
 }
