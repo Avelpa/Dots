@@ -4,6 +4,8 @@
  */
 package realdots;
 
+import java.awt.Color;
+
 /**
  *
  * @author kobed6328
@@ -12,33 +14,39 @@ public class Dot {
     
     public int x, y, width, height;
     public int velX, velY;
+    public Color color;
     
     public static enum Direction {
         LEFT, RIGHT, UP, DOWN, CHAOS
     }
     
-    public Dot(int spaceWidth, int spaceHeight)
+    public Dot(int spawnWidth, int spawnHeight)
     {
-        width = RealDots.randomInt(10, 100);
+        // random color
+        color = new Color(RealDots.randomInt(1, 255), RealDots.randomInt(1, 255), RealDots.randomInt(1, 255));
+        
+        // size
+        width = RealDots.randomInt(5, 100);
         height = width;
         
-        Direction megaDirection = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+//        Direction megaDirection = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];
+        Direction megaDirection = Direction.CHAOS;
         Direction direction = Direction.values()[RealDots.randomInt(0, Direction.values().length-2)];
         
         if (direction == Direction.UP || direction == Direction.DOWN)
         {
-            x = RealDots.randomInt(0, spaceWidth-width);
+            x = RealDots.randomInt(0, spawnWidth-width);
             if (direction == Direction.UP)
             {
-                y = spaceHeight;
+                y = spawnHeight;
             } else {
                 y = -height;
             }
         } else {
-            y = RealDots.randomInt(0, spaceHeight-height);
+            y = RealDots.randomInt(0, spawnHeight-height);
             if (direction == Direction.LEFT)
             {
-                x = spaceWidth;
+                x = spawnWidth;
             } else {
                 x = -width;
             }
@@ -46,7 +54,7 @@ public class Dot {
         
         if (megaDirection != Direction.CHAOS)
         {
-            int spd = RealDots.randomInt(5, 10);
+            int spd = generateSpeed();
             switch (direction){
                 case LEFT:
                     velX = -spd;
@@ -62,8 +70,13 @@ public class Dot {
                     break;
             }
         } else {
-            int spdX = RealDots.randomInt(5, 10);
-            int spdY = RealDots.randomInt(5, 10);
+            int spdX = 0, spdY = 0;
+            while (spdX == 0 && spdY == 0)
+            {
+                spdX = generateSpeed();
+                spdY = generateSpeed();
+            }
+            
             switch (direction){
                 case LEFT:
                     velX = -spdX;
@@ -82,6 +95,16 @@ public class Dot {
                     velX = RealDots.randomInt(0, 1) == 1 ? spdX : -spdX;
             }
         }
+    }
+    
+    private int generateSpeed(){
+        int chance = RealDots.randomInt(1, 10);
+        // 90%
+        if (chance <= 8)
+            return RealDots.randomInt(1, 5);
+        if (chance <= 9)
+            return RealDots.randomInt(6, 10);
+        return RealDots.randomInt(11, 20);
     }
     
     public void move()

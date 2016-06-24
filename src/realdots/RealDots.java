@@ -31,6 +31,8 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
     boolean spawnDot = false;
     int numSpawns = 0;
     final int superSpawns = 1000;
+    boolean paused = false;
+    boolean clearAll = false;
     
     private ArrayList<Dot> dots = new ArrayList();
     
@@ -52,28 +54,20 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         main.run();
     }
     
+    Dot newDot;
     public void spawnDot(){
         
-        Dot newDot = null;
-        
-        if (dots.isEmpty())
-        {
+        for (int i = 0; i < 100; i ++){
             newDot = new Dot(WIDTH, HEIGHT);
-            dots.add(newDot);
-        } else {
-            for (int i = 0; i < 100; i ++){
-                newDot = new Dot(WIDTH, HEIGHT);
-                for (Dot otherDot: dots){
-                    if (!validSpawn(newDot, otherDot)){
-//                        System.out.println("invalid spawn: " + newDot + " |||| " + otherDot);
-                        newDot = null;
-                        break;
-                    }
-                }
-                if (newDot != null) {
-                    dots.add(newDot);
+            for (Dot otherDot: dots){
+                if (!validSpawn(newDot, otherDot)){
+                    newDot = null;
                     break;
                 }
+            }
+            if (newDot != null) {
+                dots.add(newDot);
+                break;
             }
         }
     }
@@ -121,7 +115,8 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         ///////// X
         if (newDot.velX != otherDot.velX){
             // finding the time of intersection between x1 and x2+width2
-            t = (otherDot.x - newDot.x + otherDot.width)/(newDot.velX - otherDot.velX);
+            t = getIntersectTime(newDot.x, newDot.velX, otherDot.x+otherDot.width, otherDot.velX);
+            
             // if in one more tick the x values are still intersecting, then it's from t onwards
             if ((t+1)*newDot.velX + newDot.x < (t+1)*otherDot.velX + otherDot.x + otherDot.width){
                 timeXBefore[0] = t;
@@ -184,27 +179,105 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         if (time[0] == 0)
             return false;
         
-        if (time[0]*newDot.velX + newDot.x < WIDTH && time[0]*newDot.velX + newDot.x + newDot.width > 0 &&
-            time[0]*newDot.velY + newDot.y < HEIGHT && time[0]*newDot.velY + newDot.y + newDot.height > 0 &&
-            time[0]*otherDot.velX + otherDot.x < WIDTH && time[0]*otherDot.velX + otherDot.x + otherDot.width > 0 && 
-            time[0]*otherDot.velY + otherDot.y < HEIGHT && time[0]*otherDot.velY + otherDot.y + otherDot.height > 0){
+        int[] validIntersectTime1 = getIntersection(getScreenTime(newDot), time);
+        int[] validIntersectTime2 = getIntersection(getScreenTime(otherDot), time);
+        
+        
+        if (validIntersectTime1[0] > validIntersectTime1[1] || validIntersectTime2[0] > validIntersectTime2[1])
+            return true;
+        return false;
+        
+        /*
+        if (time[0]*newDot.velX + newDot.x <= WIDTH && time[0]*newDot.velX + newDot.x + newDot.width >= 0 &&
+            time[0]*newDot.velY + newDot.y <= HEIGHT && time[0]*newDot.velY + newDot.y + newDot.height >= 0 &&
+            time[0]*otherDot.velX + otherDot.x <= WIDTH && time[0]*otherDot.velX + otherDot.x + otherDot.width >= 0 && 
+            time[0]*otherDot.velY + otherDot.y <= HEIGHT && time[0]*otherDot.velY + otherDot.y + otherDot.height >= 0){
             
             return false;
         }
-        if (time[1]*newDot.velX + newDot.x < WIDTH && time[1]*newDot.velX + newDot.x + newDot.width > 0 &&
-            time[1]*newDot.velY + newDot.y < HEIGHT && time[1]*newDot.velY + newDot.y + newDot.height > 0 &&
-            time[1]*otherDot.velX + otherDot.x < WIDTH && time[1]*otherDot.velX + otherDot.x + otherDot.width > 0 && 
-            time[1]*otherDot.velY + otherDot.y < HEIGHT && time[1]*otherDot.velY + otherDot.y + otherDot.height > 0){
+        if (time[1]*newDot.velX + newDot.x <= WIDTH && time[1]*newDot.velX + newDot.x + newDot.width >= 0 &&
+            time[1]*newDot.velY + newDot.y <= HEIGHT && time[1]*newDot.velY + newDot.y + newDot.height >= 0 &&
+            time[1]*otherDot.velX + otherDot.x <= WIDTH && time[1]*otherDot.velX + otherDot.x + otherDot.width >= 0 && 
+            time[1]*otherDot.velY + otherDot.y <= HEIGHT && time[1]*otherDot.velY + otherDot.y + otherDot.height >= 0){
             
             return false;
-        }
+        }*/
         
-//        System.out.println("ok... you do the math");
-//        System.out.println(newDot + " ||| " + otherDot);
         
-        return true;
+        //System.out.println(newDot + " ||| " + otherDot + " " + time[0] + " " + time[1]);
+        
     }
     
+    // returns the time interval at which a point with a speed is before or equal to another point with a speed
+    public int[] getTimePeriodLessThanOrEqualTo(int xBefore, int spdBefore, int xAfter, int spdAfter){
+        
+        if (spdBefore == spdAfter){
+            // never before or equal to, since speeds are same
+            if (xBefore > xAfter)
+                return null;
+            return new int[] {0, Integer.MAX_VALUE};
+        }
+        
+        int intersectTime = (xAfter-xBefore)/(spdBefore-spdAfter);
+        
+        if (xBefore < xAfter)
+            return new int[] {-Integer.MAX_VALUE, intersectTime};
+        if (xBefore > xAfter)
+            return new int[] {intersectTime, Integer.MAX_VALUE};
+        // if it's before in one more game tick
+        if ((intersectTime+1)*spdBefore + xBefore < (intersectTime+1)*spdAfter+xAfter)
+            return new int[] {intersectTime, Integer.MAX_VALUE};
+        return new int[] {-Integer.MAX_VALUE, intersectTime};
+    }
+
+    /// probably need to delete!
+    public int getIntersectTime(int x1, int spd1, int x2, int spd2)
+    {
+        return (x2-x1)/(spd1-spd2);
+    }
+    
+    private int[] getScreenTime(Dot dot)
+    {
+        int[] xTime = null;
+        if (dot.velX != 0) {
+            xTime = new int[2];
+            xTime[0] = (-dot.x - dot.width)/dot.velX;
+            xTime[1] = (WIDTH-dot.x)/dot.velX;
+            if (xTime[0] > xTime[1]){
+                int larger = xTime[0];
+                xTime[0] = xTime[1];
+                xTime[1] = larger;
+            }
+        }
+        int[] yTime = null;
+        if (dot.velY != 0) {
+            yTime = new int[2];
+            yTime[0] = (-dot.y - dot.height)/dot.velY;
+            yTime[1] = (HEIGHT-dot.y)/dot.velY;
+            if (yTime[0] > yTime[1]){
+                int larger = yTime[0];
+                yTime[0] = yTime[1];
+                yTime[1] = larger;
+            }
+        }
+        int[] screenTime = new int[2];
+        if (xTime == null){
+            if (yTime == null){
+                screenTime[0] = 1;
+                screenTime[1] = -1;
+            } else {
+                screenTime = yTime;
+            }
+        } else  if (yTime == null){
+            screenTime = xTime;
+        } else {
+            screenTime = getIntersection(xTime, yTime);
+        }
+        
+        return screenTime;
+    }
+            
+            
     private int[] getIntersection(int[] arr1, int[] arr2){
         int[] newArr = new int[2];
         newArr[0] = arr1[0] > arr2[0] ? arr1[0] : arr2[0];
@@ -221,6 +294,7 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
     Iterator<Dot> dotIt;
     Dot curDot;
     
+    int trailLength = 9;
     
     Color backgroundColor = new Color(200, 200, 200);
     @Override
@@ -229,19 +303,19 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         g.setColor(backgroundColor);
         g.fillRect(0, 0, WIDTH, HEIGHT);
         
-        dotIt = dots.iterator();
-        while (dotIt.hasNext())
-        {
-            curDot = dotIt.next();
-            int trailX = curDot.x;
-            int trailY = curDot.y;
-            for (int i = 1; i < 100; i ++){
-                trailX -= curDot.velX;
-                trailY -= curDot.velY;
-                g.setColor(new Color(255/99*i, 255/99*i, 255/99*i));
-                g.fillRect(trailX, trailY, curDot.width, curDot.height);
-            }
-        }
+//        dotIt = dots.iterator();
+//        while (dotIt.hasNext())
+//        {
+//            curDot = dotIt.next();
+//            int trailX = curDot.x;
+//            int trailY = curDot.y;
+//            for (int i = 1; i <= trailLength; i ++){
+//                trailX -= curDot.velX;
+//                trailY -= curDot.velY;
+//                g.setColor(new Color(200, 200/trailLength*i, 200/trailLength*i));
+//                g.fillRect(trailX, trailY, curDot.width, curDot.height);
+//            }
+//        }
         
         dotIt = dots.iterator();
         while (dotIt.hasNext())
@@ -249,7 +323,7 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
             curDot = dotIt.next();
             g.setColor(Color.BLACK);
             g.fillRect(curDot.x, curDot.y, curDot.width, curDot.height);
-            g.setColor(Color.WHITE);
+            g.setColor(curDot.color);
             g.fillRect(curDot.x+2, curDot.y+2, curDot.width-4, curDot.height-4);
         }
         
@@ -262,6 +336,12 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         boolean done = false;
         
         while (!done){
+            
+            if (clearAll){
+                dots.clear();
+                clearAll = false;
+            }
+            
             if (spawnDot)
             {
                 for (int i = 0; i < numSpawns; i ++)
@@ -269,14 +349,20 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
                 spawnDot = false;
             }
             
-            dotIt = dots.iterator();
-            while (dotIt.hasNext())
-            {
-                curDot = dotIt.next();
-                curDot.move();
+            if (!paused){
+            
+                for (int i = 0; i < numSpawns; i ++)
+                    spawnDot();
                 
-                if (curDot.x+curDot.width <= 0 || curDot.x >= WIDTH || curDot.y+curDot.height <= 0 || curDot.y >= HEIGHT){
-                    dotIt.remove();
+                dotIt = dots.iterator();
+                while (dotIt.hasNext())
+                {
+                    curDot = dotIt.next();
+                    curDot.move();
+
+                    if (curDot.x+curDot.width <= 0 || curDot.x >= WIDTH || curDot.y+curDot.height <= 0 || curDot.y >= HEIGHT){
+                        dotIt.remove();
+                    }
                 }
             }
             
@@ -321,6 +407,14 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         if (Character.isDigit(ke.getKeyChar())){
             numSpawns = Character.getNumericValue(ke.getKeyChar());
             spawnDot = true;
+        }
+        
+        if (ke.getKeyCode() == KeyEvent.VK_SPACE){
+            paused = paused ? false : true;
+        }
+        
+        if (ke.getKeyChar() == 'r'){
+            clearAll = true;
         }
     }
 
