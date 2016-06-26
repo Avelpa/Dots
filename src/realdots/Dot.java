@@ -26,7 +26,7 @@ public class Dot {
         color = new Color(RealDots.randomInt(1, 255), RealDots.randomInt(1, 255), RealDots.randomInt(1, 255));
         
         // size
-        width = RealDots.randomInt(5, 100);
+        width = RealDots.randomInt(25, 300);
         height = width;
         
 //        Direction megaDirection = Direction.values()[RealDots.randomInt(0, Direction.values().length-1)];

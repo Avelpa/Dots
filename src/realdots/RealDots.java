@@ -33,6 +33,7 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
     final int superSpawns = 1000;
     boolean paused = false;
     boolean clearAll = false;
+    boolean auto = false;
     
     private ArrayList<Dot> dots = new ArrayList();
     
@@ -54,8 +55,9 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         main.run();
     }
     
-    Dot newDot;
     public void spawnDot(){
+        
+        Dot newDot;
         
         for (int i = 0; i < 100; i ++){
             newDot = new Dot(WIDTH, HEIGHT);
@@ -74,207 +76,80 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
     
     public boolean validSpawn(Dot newDot, Dot otherDot){
         
-        // finding X1 <= X2 + width2
-        int[] timeXBefore = new int[2];
-        // finding X2 >= X1 + width1
-        int[] timeXAfter = new int[2];
+        int[] timeBefore, timeAfter;
         
-        int[] timeX = new int[2];
-        
-        // finding Y1 <= Y2 + height2
-        int[] timeYBefore = new int[2];
-        // finding Y2 >= Y1 + height1
-        int[] timeYAfter = new int[2];
-        
-        int[] timeY = new int[2];
-        
-        // if their speeds are the same, it's either always intersect or never, so check for that first
-        if (newDot.velX == otherDot.velX){
-            if (newDot.x > otherDot.x + otherDot.width)
-                return true;
-            if (otherDot.x > newDot.x + newDot.width)
-                return true;
-            
-            timeX[0] = 0;
-            timeX[1] = Integer.MAX_VALUE;
-            
-        }
-        if (newDot.velY == otherDot.velY){
-            if (newDot.y > otherDot.y + otherDot.height)
-                return true;
-            if (otherDot.y > newDot.y + newDot.height)
-                return true;
-            
-            timeY[0] = 0;
-            timeY[1] = Integer.MAX_VALUE;
-        }
-        
-        
-        int t;
-        
-        ///////// X
-        if (newDot.velX != otherDot.velX){
-            // finding the time of intersection between x1 and x2+width2
-            t = getIntersectTime(newDot.x, newDot.velX, otherDot.x+otherDot.width, otherDot.velX);
-            
-            // if in one more tick the x values are still intersecting, then it's from t onwards
-            if ((t+1)*newDot.velX + newDot.x < (t+1)*otherDot.velX + otherDot.x + otherDot.width){
-                timeXBefore[0] = t;
-                timeXBefore[1] = Integer.MAX_VALUE;
-            } else {
-                timeXBefore[0] = -Integer.MAX_VALUE;
-                timeXBefore[1] = t;
-            }
-            
-            // finding the time of intersection between x2 and x1+width1
-            t = (newDot.x - otherDot.x + newDot.width)/(otherDot.velX - newDot.velX);
-            // if in one more tick the x values are still intersecting, then it's from t onwards
-            if ((t+1)*otherDot.velX + otherDot.x < (t+1)*newDot.velX + newDot.x + newDot.width){
-                timeXAfter[0] = t;
-                timeXAfter[1] = Integer.MAX_VALUE;
-            } else {
-                timeXAfter[0] = -Integer.MAX_VALUE;
-                timeXAfter[1] = t;
-            }
-            
-            timeX = getIntersection(timeXBefore, timeXAfter);
-        }
-        
-       
-        ////////////////// Y
-        if (newDot.velY != otherDot.velY){
-            // finding the time of intersection between x1 and x2+width2
-            t = (otherDot.y - newDot.y + otherDot.height)/(newDot.velY - otherDot.velY);
-            // if in one more tick the x values are still intersecting, then it's from t onwards
-            if ((t+1)*newDot.velY + newDot.y < (t+1)*otherDot.velY + otherDot.y + otherDot.height){
-                timeYBefore[0] = t;
-                timeYBefore[1] = Integer.MAX_VALUE;
-            } else {
-                timeYBefore[0] = -Integer.MAX_VALUE;
-                timeYBefore[1] = t;
-            }
-            
-            // finding the time of intersection between x2 and x1+width1
-            t = (newDot.y - otherDot.y + newDot.height)/(otherDot.velY - newDot.velY);
-            // if in one more tick the x values are still intersecting, then it's from t onwards
-            if ((t+1)*otherDot.velY + otherDot.y < (t+1)*newDot.velY + newDot.y + newDot.height){
-                timeYAfter[0] = t;
-                timeYAfter[1] = Integer.MAX_VALUE;
-            } else {
-                timeYAfter[0] = -Integer.MAX_VALUE;
-                timeYAfter[1] = t;
-            }
-            
-            timeY = getIntersection(timeYBefore, timeYAfter);
-        }
-        
-//        System.out.println(timeY[0] + " " + timeY[1]);
-        
-        int[] time = getIntersection(timeX, timeY);
-        
-//        System.out.println("ergo: " + time[0] + " " + time[1]);
-        
-        if (time[1] < time[0]) 
+        // never intersect x
+        timeBefore = getTimePeriodLessThanOrEqualTo(newDot.x, newDot.velX, otherDot.x + otherDot.width, otherDot.velX);
+        if (timeBefore == null)
             return true;
-        if (time[0] == 0)
-            return false;
         
-        int[] validIntersectTime1 = getIntersection(getScreenTime(newDot), time);
-        int[] validIntersectTime2 = getIntersection(getScreenTime(otherDot), time);
+        timeAfter = getTimePeriodLessThanOrEqualTo(otherDot.x, otherDot.velX, newDot.x + newDot.width, newDot.velX);
+        if (timeAfter == null)
+            return true;
+        
+        int[] timeIntersectX = getIntersection(timeBefore, timeAfter);
+        
+        // never intersect y
+        timeBefore = getTimePeriodLessThanOrEqualTo(newDot.y, newDot.velY, otherDot.y + otherDot.height, otherDot.velY);
+        if (timeBefore == null)
+            return true;
+        
+        timeAfter = getTimePeriodLessThanOrEqualTo(otherDot.y, otherDot.velY, newDot.y + newDot.height, newDot.velY);
+        if (timeAfter == null)
+            return true;
+        
+        int[] timeIntersectY = getIntersection(timeBefore, timeAfter);
+        
+        int[] intersectTime = getIntersection(timeIntersectX, timeIntersectY);
+        // never intersect
+        if (intersectTime == null)
+            return true;
         
         
-        if (validIntersectTime1[0] > validIntersectTime1[1] || validIntersectTime2[0] > validIntersectTime2[1])
+        int[] onScreenIntersectionTime1 = getIntersection(getScreenTime(newDot), intersectTime);
+        int[] onScreenIntersectionTime2 = getIntersection(getScreenTime(otherDot), intersectTime);
+        
+        if (onScreenIntersectionTime1 == null || onScreenIntersectionTime2 == null)
             return true;
         return false;
-        
-        /*
-        if (time[0]*newDot.velX + newDot.x <= WIDTH && time[0]*newDot.velX + newDot.x + newDot.width >= 0 &&
-            time[0]*newDot.velY + newDot.y <= HEIGHT && time[0]*newDot.velY + newDot.y + newDot.height >= 0 &&
-            time[0]*otherDot.velX + otherDot.x <= WIDTH && time[0]*otherDot.velX + otherDot.x + otherDot.width >= 0 && 
-            time[0]*otherDot.velY + otherDot.y <= HEIGHT && time[0]*otherDot.velY + otherDot.y + otherDot.height >= 0){
-            
-            return false;
-        }
-        if (time[1]*newDot.velX + newDot.x <= WIDTH && time[1]*newDot.velX + newDot.x + newDot.width >= 0 &&
-            time[1]*newDot.velY + newDot.y <= HEIGHT && time[1]*newDot.velY + newDot.y + newDot.height >= 0 &&
-            time[1]*otherDot.velX + otherDot.x <= WIDTH && time[1]*otherDot.velX + otherDot.x + otherDot.width >= 0 && 
-            time[1]*otherDot.velY + otherDot.y <= HEIGHT && time[1]*otherDot.velY + otherDot.y + otherDot.height >= 0){
-            
-            return false;
-        }*/
-        
-        
-        //System.out.println(newDot + " ||| " + otherDot + " " + time[0] + " " + time[1]);
-        
     }
     
     // returns the time interval at which a point with a speed is before or equal to another point with a speed
-    public int[] getTimePeriodLessThanOrEqualTo(int xBefore, int spdBefore, int xAfter, int spdAfter){
+    public int[] getTimePeriodLessThanOrEqualTo(int x, int spd, int xTarget, int spdTarget){
         
-        if (spdBefore == spdAfter){
+        if (spd == spdTarget){
             // never before or equal to, since speeds are same
-            if (xBefore > xAfter)
+            if (x > xTarget)
                 return null;
             return new int[] {0, Integer.MAX_VALUE};
         }
         
-        int intersectTime = (xAfter-xBefore)/(spdBefore-spdAfter);
+        int intersectTime = (xTarget-x)/(spd-spdTarget);
         
-        if (xBefore < xAfter)
-            return new int[] {-Integer.MAX_VALUE, intersectTime};
-        if (xBefore > xAfter)
-            return new int[] {intersectTime, Integer.MAX_VALUE};
         // if it's before in one more game tick
-        if ((intersectTime+1)*spdBefore + xBefore < (intersectTime+1)*spdAfter+xAfter)
+        if ((intersectTime+1)*spd + x < (intersectTime+1)*spdTarget+xTarget)
             return new int[] {intersectTime, Integer.MAX_VALUE};
         return new int[] {-Integer.MAX_VALUE, intersectTime};
     }
 
-    /// probably need to delete!
-    public int getIntersectTime(int x1, int spd1, int x2, int spd2)
-    {
-        return (x2-x1)/(spd1-spd2);
-    }
-    
     private int[] getScreenTime(Dot dot)
     {
-        int[] xTime = null;
-        if (dot.velX != 0) {
-            xTime = new int[2];
-            xTime[0] = (-dot.x - dot.width)/dot.velX;
-            xTime[1] = (WIDTH-dot.x)/dot.velX;
-            if (xTime[0] > xTime[1]){
-                int larger = xTime[0];
-                xTime[0] = xTime[1];
-                xTime[1] = larger;
-            }
-        }
-        int[] yTime = null;
-        if (dot.velY != 0) {
-            yTime = new int[2];
-            yTime[0] = (-dot.y - dot.height)/dot.velY;
-            yTime[1] = (HEIGHT-dot.y)/dot.velY;
-            if (yTime[0] > yTime[1]){
-                int larger = yTime[0];
-                yTime[0] = yTime[1];
-                yTime[1] = larger;
-            }
-        }
-        int[] screenTime = new int[2];
-        if (xTime == null){
-            if (yTime == null){
-                screenTime[0] = 1;
-                screenTime[1] = -1;
-            } else {
-                screenTime = yTime;
-            }
-        } else  if (yTime == null){
-            screenTime = xTime;
-        } else {
-            screenTime = getIntersection(xTime, yTime);
-        }
+        int[] timeBefore;
+        int[] timeAfter;
         
-        return screenTime;
+        // get x screen-time
+        timeBefore = getTimePeriodLessThanOrEqualTo(dot.x, dot.velX, WIDTH, 0);
+        timeAfter = getTimePeriodLessThanOrEqualTo(0, 0, dot.x + dot.width, dot.velX);
+        
+        int[] timeOnScreenX = getIntersection(timeBefore, timeAfter);
+        
+        // get y screen-time
+        timeBefore = getTimePeriodLessThanOrEqualTo(dot.y, dot.velY, HEIGHT, 0);
+        timeAfter = getTimePeriodLessThanOrEqualTo(0, 0, dot.y + dot.height, dot.velY);
+        
+        int[] timeOnScreenY = getIntersection(timeBefore, timeAfter);
+        
+        return getIntersection(timeOnScreenX, timeOnScreenY);
     }
             
             
@@ -283,6 +158,8 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         newArr[0] = arr1[0] > arr2[0] ? arr1[0] : arr2[0];
         newArr[1] = arr1[1] < arr2[1] ? arr1[1] : arr2[1];
         
+        if (newArr[0] > newArr[1])
+            return null;
         return newArr;
     }
     
@@ -296,8 +173,10 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
     
     int trailLength = 9;
     
-    Color backgroundColor = new Color(200, 200, 200);
-    @Override
+    Color pausedColor = Color.BLACK;
+    Color runColor = new Color(200, 200, 200);
+    Color backgroundColor = runColor;
+    @Override 
     public void paintComponent(Graphics g)
     {
         g.setColor(backgroundColor);
@@ -346,14 +225,12 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
             {
                 for (int i = 0; i < numSpawns; i ++)
                     spawnDot();
-                spawnDot = false;
+                if (!auto)
+                    spawnDot = false;
             }
             
             if (!paused){
             
-                for (int i = 0; i < numSpawns; i ++)
-                    spawnDot();
-                
                 dotIt = dots.iterator();
                 while (dotIt.hasNext())
                 {
@@ -411,10 +288,16 @@ public class RealDots extends JComponent implements MouseListener, KeyListener {
         
         if (ke.getKeyCode() == KeyEvent.VK_SPACE){
             paused = paused ? false : true;
+            backgroundColor = paused ? pausedColor : runColor;
         }
         
         if (ke.getKeyChar() == 'r'){
             clearAll = true;
+        }
+        
+        if (ke.getKeyChar() == 'a') {
+            spawnDot = true;
+            auto = auto ? false : true;
         }
     }
 
