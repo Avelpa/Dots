@@ -1,5 +1,7 @@
 # Dots
 
+[Here's a short video of the project](https://www.youtube.com/watch?v=7ll0tpvOpH4&feature=youtu.be)
+
 Rectangles of various sizes and speeds shoot across the screen without ever colliding
 
 Key | Function
